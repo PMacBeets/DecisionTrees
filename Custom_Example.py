@@ -6,19 +6,20 @@ import graphviz
 
 
 system = ID3_Plus.InspectionSystem()
-system.root.buildtree()
+system.buildtree()
 h = graphviz.Digraph('H', filename='InspectionGraph.gv')
 
 #illustrate graph
-node = system.root.tree_clf.node
+node = system.tree_clf.node
 def build_node_tree(node):
     # if node.childs is [] and node.next is None:
     #     return
     if node.childs is not None:
         for child in node.childs:
-            print(node.name, child.name)
+            #print(node.name, child.name)
             h.edge(node.name, child.name)
             build_node_tree(child)
+            child.create_df()
 
     elif node.next is not None:
         if node.next.name is None:
@@ -26,6 +27,7 @@ def build_node_tree(node):
         else:
             h.edge(node.name, node.next.name)
             build_node_tree(node.next)
+            node.create_df()
     else:
         return
 
