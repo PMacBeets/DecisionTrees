@@ -23,9 +23,10 @@ class Node:
         self.df = None
 
     def create_df(self):
-        data = self.ss.X[self.x_ids,self.unvisited]
-        #data = data[,:]
-        self.df = pd.DataFrame(data=data,columns=np.array(self.ss.feature_names)[self.unvisited],index=np.array(self.ss.labels)[self.x_ids])
+        #print(f"{self.x_ids},{self.unvisited}")
+        data = self.ss.X[self.x_ids,:]
+        data = data[:,self.unvisited]
+        self.df = pd.DataFrame(data=data,columns=np.array(self.ss.feature_names)[self.unvisited],index=np.array(self.ss.labels)[self.x_ids]) #,,
 
 
 class DecisionTreeClassifier:

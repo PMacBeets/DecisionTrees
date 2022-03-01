@@ -14,20 +14,20 @@ node = system.tree_clf.node
 def build_node_tree(node):
     # if node.childs is [] and node.next is None:
     #     return
+    node.create_df()
     if node.childs is not None:
         for child in node.childs:
             #print(node.name, child.name)
             h.edge(node.name, child.name)
             build_node_tree(child)
-            child.create_df()
 
     elif node.next is not None:
         if node.next.name is None:
             h.edge(node.name, node.next.value)
+            #node.create_df()
         else:
             h.edge(node.name, node.next.name)
             build_node_tree(node.next)
-            node.create_df()
     else:
         return
 
