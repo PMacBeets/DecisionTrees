@@ -36,5 +36,5 @@ from ID3 import DecisionTreeClassifier
 tree_clf = DecisionTreeClassifier(X=X, feature_names=feature_names, labels=y)
 print("System entropy {:.4f}".format(tree_clf.entropy))
 # run algorithm id3 to build a tree
-tree_clf.id3()
+tree_clf.id3(1)
 tree_clf.printTree()

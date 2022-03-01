@@ -1,10 +1,12 @@
 import math
 from collections import deque
 
+
 class Node:
     """Contains the information of the node and another nodes of the Decision Tree."""
 
     def __init__(self):
+        self.name = None
         self.value = None
         self.next = None
         self.childs = None
@@ -13,10 +15,12 @@ class Node:
 class DecisionTreeClassifier:
     """Decision Tree Classifier using ID3 algorithm."""
 
-    def __init__(self, X, feature_names, labels):
+    def __init__(self, X, feature_names, labels, probY, sensor_cost):
         self.X = X
         self.feature_names = feature_names
         self.labels = labels
+        self.probY = probY
+        self.sensor_cost = sensor_cost
         self.labelCategories = list(set(labels))
         self.labelCategoriesCount = [list(labels).count(x) for x in self.labelCategories]
         self.node = None
@@ -33,10 +37,12 @@ class DecisionTreeClassifier:
         # sorted labels by instance id
         labels = [self.labels[i] for i in x_ids]
         # count number of instances of each category
-        label_count = [labels.count(x) for x in self.labelCategories]
+        label_count_new = self.probY
+        #label_count = [labels.count(x) for x in self.labelCategories]
         # calculate the entropy for each category and sum them
-        entropy = sum([-count / len(x_ids) * math.log(count / len(x_ids), 2) if count else 0 for count in label_count])
-        return entropy
+        #entropy = sum([-count / len(x_ids) * math.log(count / len(x_ids), 2) if count else 0 for count in label_count])
+        entropy_new = sum([-count * math.log(count, 2) if count else 0 for count in label_count_new])
+        return entropy_new
 
     def _get_information_gain(self, x_ids, feature_id):
         """Calculates the information gain for a given feature based on its entropy and the total entropy of the system.
@@ -67,7 +73,7 @@ class DecisionTreeClassifier:
         info_gain = info_gain - sum([val_counts / len(x_ids) * self._get_entropy(val_ids)
                                      for val_counts, val_ids in zip(feature_vals_count, feature_vals_id)])
 
-        return info_gain
+        return info_gain/self.sensor_cost[feature_id] # Added by Jake, Information per cost
 
     def _get_feature_max_information_gain(self, x_ids, feature_ids):
         """Finds the attribute/feature that maximizes the information gain.
@@ -85,16 +91,16 @@ class DecisionTreeClassifier:
 
         return self.feature_names[max_id], max_id
 
-    def id3(self):
+    def id3(self, max_depth=None):
         """Initializes ID3 algorithm to build a Decision Tree Classifier.
         :return: None
         """
         x_ids = [x for x in range(len(self.X))]
         feature_ids = [x for x in range(len(self.feature_names))]
-        self.node = self._id3_recv(x_ids, feature_ids, self.node)
+        self.node = self._id3_recv(x_ids, feature_ids, self.node,0,max_depth)
         print('')
 
-    def _id3_recv(self, x_ids, feature_ids, node):
+    def _id3_recv(self, x_ids, feature_ids, node, depth, max_depth):
         """ID3 algorithm. It is called recursively until some criteria is met.
         Parameters
         __________
@@ -104,8 +110,11 @@ class DecisionTreeClassifier:
         __________
         :returns: An instance of the class Node containing all the information of the nodes in the Decision Tree
         """
+
         if not node:
             node = Node()  # initialize nodes
+            node.name = None
+
         # sorted labels by instance id
         labels_in_features = [self.labels[x] for x in x_ids]
         # if all the example have the same class (pure node), return node
@@ -116,6 +125,11 @@ class DecisionTreeClassifier:
         if len(feature_ids) == 0:
             node.value = max(set(labels_in_features), key=labels_in_features.count)  # compute mode
             return node
+
+        # If the maximum depth is reached return the set of all possible outcomes
+        if max_depth is not None and depth == max_depth:
+            node.value = set(labels_in_features) # compute mode
+            return node
         # else...
         # choose the feature that maximizes the information gain
         best_feature_name, best_feature_id = self._get_feature_max_information_gain(x_ids, feature_ids)
@@ -123,9 +137,11 @@ class DecisionTreeClassifier:
         node.childs = []
         # value of the chosen feature for each instance
         feature_values = list(set([self.X[x][best_feature_id] for x in x_ids]))
+        node.name = best_feature_name
         # loop through all the values
         for value in feature_values:
             child = Node()
+            child.name = best_feature_name+" (" + str(value) +")"
             child.value = value  # add a branch from the node to each feature value in our feature
             node.childs.append(child)  # append new child node to current node
             child_x_ids = [x for x in x_ids if self.X[x][best_feature_id] == value]
@@ -137,7 +153,7 @@ class DecisionTreeClassifier:
                     to_remove = feature_ids.index(best_feature_id)
                     feature_ids.pop(to_remove)
                 # recursively call the algorithm
-                child.next = self._id3_recv(child_x_ids, feature_ids, child.next)
+                child.next = self._id3_recv(child_x_ids, feature_ids, child.next, depth+1, max_depth)
         return node
 
     def printTree(self):
