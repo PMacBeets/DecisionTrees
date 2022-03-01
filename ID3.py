@@ -23,9 +23,9 @@ class Node:
         self.df = None
 
     def create_df(self):
-        data = self.ss.X[self.unvisited,:]
-        data = data[:,self.x_ids]
-        self.df = pd.DataFrame(data=data,columns=np.array(self.ss.labels)[self.unvisited],index=np.array(self.ss.feature_names)[self.x_ids])
+        data = self.ss.X[self.x_ids,self.unvisited]
+        #data = data[,:]
+        self.df = pd.DataFrame(data=data,columns=np.array(self.ss.feature_names)[self.unvisited],index=np.array(self.ss.labels)[self.x_ids])
 
 
 class DecisionTreeClassifier:
@@ -107,7 +107,7 @@ class DecisionTreeClassifier:
         """
         x_ids = [x for x in range(len(self.ss.X))]
         feature_ids = [x for x in range(len(self.ss.feature_names))]
-        self.node = self._id3_recv(x_ids, feature_ids, self.node,0,max_depth,[], list(np.arange(len(self.ss.labels))))
+        self.node = self._id3_recv(x_ids, feature_ids, self.node,0,max_depth,[], list(np.arange(len(self.ss.feature_names))))
         print('')
 
     def _id3_recv(self, x_ids, feature_ids, node, depth, max_depth,visited, unvisited):
