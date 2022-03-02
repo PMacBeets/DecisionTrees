@@ -5,6 +5,7 @@ import pandas as pd
 import numpy as np
 
 import ID3_Plus
+from g import *
 
 
 class Node:
@@ -12,10 +13,13 @@ class Node:
 
     def __init__(self,ss):
         self.ss = ss
+        self.uid = str(g.uid)
+        g.uid+=1
         self.name = None
         self.value = None
         self.next = None
         self.childs = None
+        self.parent = None
         self.id = None
         self.x_ids = None
         self.visited = []
@@ -25,7 +29,6 @@ class Node:
         # entropy calcs
         self.p_obsv = None
         self.condition_table = None
-
 
     def create_df(self):
         #print(f"{self.x_ids},{self.unvisited}")
@@ -39,7 +42,7 @@ class Node:
 class DecisionTreeClassifier:
     """Decision Tree Classifier using ID3 algorithm."""
 
-    def __init__(self, search_state,debug=False):
+    def __init__(self, search_state, debug=False):
         self.ss = search_state
         self.node = None
         #self.entropy = self._get_entropy([x for x in range(len(self.ss.labels))],debug)  # calculates the initial entropy
@@ -216,10 +219,13 @@ class DecisionTreeClassifier:
         # if all the example have the same class (pure node), return node
         if len(set(labels_in_features)) == 1:
             node.value = self.ss.labels[x_ids[0]]
+            if debug: print(f"Failure Found: {node.value}")
             return node
         # if there are not more feature to compute, return node with the most probable class
         if len(feature_ids) == 0:
+            print(f"Feature ID {feature_ids}")
             node.value = max(set(labels_in_features), key=labels_in_features.count)  # compute mode
+            if debug: print(f"No More Features: {node.value} chosen from {labels_in_features}")
             return node
         # If the maximum depth is reached return the set of all possible outcomes
         if max_depth is not None and depth == max_depth:
@@ -249,6 +255,7 @@ class DecisionTreeClassifier:
             node.childs.append(child)  # append new child node to current node
             child_x_ids = [x for x in x_ids if self.ss.X[x][best_feature_id] == value]
             child.x_ids = child_x_ids
+            child.parent = node
             child.visited = node.visited.copy()
             child.unvisited = node.unvisited.copy()
             child.obsv = node.obsv.copy()
@@ -257,11 +264,14 @@ class DecisionTreeClassifier:
                 child.next = max(set(labels_in_features), key=labels_in_features.count)
                 print('')
             else:
-                if feature_ids and best_feature_id in feature_ids:
-                    to_remove = feature_ids.index(best_feature_id)
-                    feature_ids.pop(to_remove)
+                feature_ids_copy = feature_ids.copy()
+                if feature_ids_copy and best_feature_id in feature_ids:
+                    to_remove = feature_ids_copy.index(best_feature_id)
+                    if debug: print(f"Remove from feature ID's {to_remove}")
+                    feature_ids_copy.pop(to_remove)
                 # recursively call the algorithm
-                child.next = self._id3_recv(child_x_ids, feature_ids, child.next, depth+1, max_depth, node.visited, node.unvisited,child.obsv, node.id, debug)
+                child.next = self._id3_recv(child_x_ids, feature_ids_copy, child.next, depth+1, max_depth, node.visited, node.unvisited,child.obsv, node.id, debug)
+        if debug: print(f"END: {node.value} chosen from {labels_in_features}")
         return node
 
     def printTree(self):
