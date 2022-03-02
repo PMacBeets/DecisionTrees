@@ -34,7 +34,7 @@ class InspectionSystem:
             pass
 
         self.ave_inspection_costs = self.calc_ave_inspection_cost() # from connection matrix
-        self.root = SearchState(np.array(self.inspection_df), list(self.inspection_df.columns), self.event_list, self.ave_inspection_costs, self.event_prob)
+        self.root = SearchState(np.array(self.inspection_df), list(self.inspection_df.columns), self.event_list, self.ave_inspection_costs, self.event_prob,self.connection_matrix)
 
     def lookahead(self):
         # instantiate DecisionTreeClassifier
@@ -44,14 +44,13 @@ class InspectionSystem:
         self.tree_clf.id3(1)
         self.tree_clf.printTree()
 
-    def buildtree(self):
+    def buildtree(self, debug):
         # instantiate DecisionTreeClassifier
         self.tree_clf = DecisionTreeClassifier(self.root)
-        print("System entropy {:.4f}".format(self.tree_clf.entropy))
+        #print("System entropy {:.4f}".format(self.tree_clf.entropy))
         # run algorithm id3 to build a tree
-        self.tree_clf.id3()
+        self.tree_clf.id3(debug=debug)
         self.tree_clf.printTree()
-
 
     def search(self):
         root = Node(self.root)
@@ -59,7 +58,6 @@ class InspectionSystem:
         self.recursive_function(node_queue, debug=True)
 
     def recursive_function(self, queue, debug: bool):
-
         pass
         # pop node from queue if queue has nodes to look at
         if queue:
@@ -72,7 +70,6 @@ class InspectionSystem:
         # Outcome_Table = outcome_table(node.data,debug=True)
 
         if debug: node.data.selfprint()
-
         # condition table
         #node.create_condition_table(node.data, debug=False)
         index = node.data.Information_Gain(node, "2", debug=True, average=True)
@@ -190,7 +187,7 @@ class InspectionSystem:
 
 class SearchState:
 
-    def __init__(self, X, feature_names, event_list, sensor_cost, ProbY, debug=False):
+    def __init__(self, X, feature_names, event_list, sensor_cost, ProbY, connection_matrix,debug=False):
         assert isinstance(X, np.ndarray)
         #assert isinstance(event_list, list)
 
@@ -199,8 +196,11 @@ class SearchState:
         self.labels = event_list
         self.probY = ProbY
         self.sensor_cost = sensor_cost # The cost of inspecting each sensor
+        self.k_dic = [None]*np.shape(self.X)[1]
         self.labelCategories = list(set(self.labels))
         self.labelCategoriesCount = [list(self.labels).count(x) for x in self.labelCategories]
+        self.connection_matrix = connection_matrix
+        self.create_k_dict(debug)
         #self.create_condition_table(debug)
 
         # Sensor to be added to the sensor set on the next branch
@@ -245,3 +245,64 @@ class SearchState:
         self.check_prop_is_valid(new_state)
 
         return
+
+    def create_k_dict(self, debug: bool):
+        # Define number of measurement results (k)
+        #
+        # Create Matrix illustrating the probability of reading a given value assuming there is a failure
+        unique_k = {}
+        total = 0
+        # Iterate through sensors
+        for j in range(len(self.feature_names)):
+            if self.k_dic[j] is None:
+                self.k_dic[j] = {}
+
+            # Iterate through events
+            for i in range(len(self.labels)):
+
+                if self.X[i][j] != "":
+                    # check k_array
+                    # IF is in k_dic update
+
+                    if self.k_dic[j].get(self.X[i][j]) is not None:
+                        self.k_dic[j][self.X[i][j]] += self.probY[i]
+
+
+                    # if it is not add extra
+                    else:
+                        self.k_dic[j].update({self.X[i][j]: self.probY[i]})
+
+                        # if it is a new measurment output needed to be captured in probX add to list
+                        if unique_k.get(self.X[i][j]) is None:
+                            unique_k.update({self.X[i][j]: None})
+
+    def create_condition_table(self, debug: bool):
+
+        # create empty condition table
+        self.ConditionTable = np.zeros((len(self.labels), len(self.sensor_list)))
+
+        # Iterate through possible sensors
+        # all possible sensors do adhear to the rules of the existing sensor set
+        for j in range(len(self.sensor_list)):
+            # Extract rule from proptable
+            total = 0
+            for i in range(len(self.labels)):
+                p_E = self.ProbY[i][0]
+                # Extract rule from proptable
+                k = self.PropTable[i][j]
+                total += 1
+
+                # If not already there
+                if self.k_dic[j].get(self.PropTable[i][j]) is None:
+                    # Add
+                    # k_dic.update({s_state.PropTable[i][j]:s_state.k_dic[j][s_state.PropTable[i][j]]})
+                    self.ConditionTable[i][j] = p_E / self.k_dic[j][self.PropTable[i][j]]
+
+                else:
+                    # update
+                    # k_dic[s_state.PropTable[i][j]]+=k_dic[j][s_state.PropTable[i][j]]
+                    self.ConditionTable[i][j] = p_E / self.k_dic[j][self.PropTable[i][j]]
+
+                if debug:
+                    print("i = {}, j = {}, p_E/prob = {:.2f}/{:.2f} = {:.2f}".format(i, j, p_E, self.k_dic[j][
+                        self.PropTable[i][j]], self.ConditionTable[i][j]))

@@ -6,7 +6,7 @@ import graphviz
 
 
 system = ID3_Plus.InspectionSystem()
-system.buildtree()
+system.buildtree(True)
 h = graphviz.Digraph('H', filename='InspectionGraph.gv')
 
 #illustrate graph
