@@ -68,8 +68,12 @@ class DecisionTreeClassifier:
         ]
         print(f"system entropy={info_gain}")
         # compute the information gain with the chosen feature
-        info_gain = info_gain - sum([val_counts / len(x_ids) * self._get_entropy(val_ids)
-                                     for val_counts, val_ids in zip(feature_vals_count, feature_vals_id)])
+        for val_counts, val_ids in zip(feature_vals_count, feature_vals_id):
+            ent = val_counts / len(x_ids) * self._get_entropy(val_ids)
+            print(f"{info_gain-ent} = {info_gain} - {ent}")
+            info_gain = info_gain - ent
+
+
         print(f"Feature={self.feature_names[feature_id]}, info_gain = {info_gain}")
         return info_gain
 
@@ -137,11 +141,12 @@ class DecisionTreeClassifier:
                 child.next = max(set(labels_in_features), key=labels_in_features.count)
                 print('')
             else:
-                if feature_ids and best_feature_id in feature_ids:
-                    to_remove = feature_ids.index(best_feature_id)
-                    feature_ids.pop(to_remove)
+                feature_ids_copy = feature_ids.copy()
+                if feature_ids_copy and best_feature_id in feature_ids:
+                    to_remove = feature_ids_copy.index(best_feature_id)
+                    feature_ids_copy.pop(to_remove)
                 # recursively call the algorithm
-                child.next = self._id3_recv(child_x_ids, feature_ids, child.next)
+                child.next = self._id3_recv(child_x_ids, feature_ids_copy, child.next)
         return node
 
     def printTree(self):
@@ -150,15 +155,20 @@ class DecisionTreeClassifier:
         nodes = deque()
         nodes.append(self.node)
         depth = 0
-        while len(nodes) > 0:
-            node = nodes.popleft()
-            print(f'{" ":<{4 * depth}}{node.value}')
-            if node.childs:
-                for child in node.childs:
-                    print(f'{" ":<{4*depth}}({child.value})')
-                    nodes.append(child.next)
-                    depth+=1
-            elif node.next:
-                print(f'{" ":<{4*depth}}({node.next})')
+        self.recursive_print(nodes,depth)
+
+    def recursive_print(self,nodes, depth):
+        node = nodes.popleft()
+        print(f'{" ":<{4 * depth}}{node.value}')
+        #depth+=1
+        if node.childs:
+            for child in node.childs:
+                print(f'{" ":<{4*depth}}({child.value})')
+                nodes.append(child.next)
+                self.recursive_print(nodes, depth+1)
+        elif node.next:
+            print(f'{" ":<{4*depth}}({node.next})Poop')
+            raise Exception("Not sure this is possible notmally")
+
 
                 #print(node.next)
