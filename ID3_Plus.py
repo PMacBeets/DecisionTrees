@@ -31,10 +31,11 @@ class InspectionSystem:
             self.build_random_data(debug)
         else:
             # Read in data from tables
+            self.read_data()
             pass
 
         self.ave_inspection_costs = self.calc_ave_inspection_cost() # from connection matrix
-        self.root = SearchState(np.array(self.inspection_df), list(self.inspection_df.columns), self.event_list, self.ave_inspection_costs, self.event_prob,self.connection_matrix)
+        self.root = SearchState(np.array(self.inspection_df), list(self.inspection_df.columns), self.event_list, self.ave_inspection_costs, self.event_prob, self.connection_matrix)
 
     def lookahead(self):
         # instantiate DecisionTreeClassifier
@@ -76,6 +77,19 @@ class InspectionSystem:
         # Create nodes for each child branch and copy/adjust "get_system info" fields if applicable
         node.data.check_children(node, index, queue, debug=True)
         self.recursive_function(queue, debug=debug)
+
+    def read_data(self):
+        df = "/Proptable.csv"
+        self.inspection_df = pd.read_csv(self.path+df,index_col=0)
+        shape = self.inspection_df.shape
+        self.num_inspections = shape[1]
+        self.num_failure = shape[0]
+        self.event_list = list(self.inspection_df.index)
+        self.connection_matrix = np.array(pd.read_csv(self.path+"/ConnectionMatrix.csv", header=None))
+        assert(self.connection_matrix.shape[1] == self.connection_matrix.shape[0] == shape[1])
+        self.event_prob = np.array(pd.read_csv(self.path+"/ProbY.csv", header=None).transpose())
+        self.event_prob = self.event_prob[0,:]
+        print("p")
 
     def build_random_data(self, debug=False):
         np.random.seed(1)  # 1 give unique values

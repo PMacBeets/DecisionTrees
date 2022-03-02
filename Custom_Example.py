@@ -5,9 +5,10 @@ import networkx as nx
 import graphviz
 from anytree import Node, RenderTree
 from anytree.exporter import DotExporter
+import os
 
-
-system = ID3_Plus.InspectionSystem()
+path = "Data"
+system = ID3_Plus.InspectionSystem(path)
 system.buildtree(True)
 h = graphviz.Digraph('H', filename='InspectionGraph.gv')
 #h = graphviz.AGraph("H", filename='InspectionGraph.gv', directed=True)
