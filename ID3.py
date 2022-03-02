@@ -129,6 +129,8 @@ class DecisionTreeClassifier:
         #     # Iterate through events
         #     for j in range(len(self.ss.labels)):
         #         a = a*self.ss.k_dic[j][self.ss.X[i][j]]
+        label_count_new = label_count_new / np.sum(label_count_new)
+        assert (np.sum(label_count_new) - 1 < 0.00001)
 
         if debug:
             # print(f"    {label_count}")

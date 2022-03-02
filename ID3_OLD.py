@@ -37,7 +37,10 @@ class DecisionTreeClassifier:
         # count number of instances of each category
         label_count = [labels.count(x) for x in self.labelCategories]
         # calculate the entropy for each category and sum them
-        entropy = sum([-count / len(x_ids) * math.log(count / len(x_ids), 2) if count else 0 for count in label_count])
+        entropy = 0
+        for count in label_count:
+            if count:
+                entropy -=count / len(x_ids) * math.log(count / len(x_ids), 2)
         print(f"    {label_count}")
         print(f"    entropy = {entropy}")
         return entropy
