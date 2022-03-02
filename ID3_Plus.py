@@ -290,33 +290,33 @@ class SearchState:
                         if unique_k.get(self.X[i][j]) is None:
                             unique_k.update({self.X[i][j]: None})
 
-    def create_condition_table(self, debug: bool):
-
-        # create empty condition table
-        self.ConditionTable = np.zeros((len(self.labels), len(self.sensor_list)))
-
-        # Iterate through possible sensors
-        # all possible sensors do adhear to the rules of the existing sensor set
-        for j in range(len(self.sensor_list)):
-            # Extract rule from proptable
-            total = 0
-            for i in range(len(self.labels)):
-                p_E = self.ProbY[i][0]
-                # Extract rule from proptable
-                k = self.PropTable[i][j]
-                total += 1
-
-                # If not already there
-                if self.k_dic[j].get(self.PropTable[i][j]) is None:
-                    # Add
-                    # k_dic.update({s_state.PropTable[i][j]:s_state.k_dic[j][s_state.PropTable[i][j]]})
-                    self.ConditionTable[i][j] = p_E / self.k_dic[j][self.PropTable[i][j]]
-
-                else:
-                    # update
-                    # k_dic[s_state.PropTable[i][j]]+=k_dic[j][s_state.PropTable[i][j]]
-                    self.ConditionTable[i][j] = p_E / self.k_dic[j][self.PropTable[i][j]]
-
-                if debug:
-                    print("i = {}, j = {}, p_E/prob = {:.2f}/{:.2f} = {:.2f}".format(i, j, p_E, self.k_dic[j][
-                        self.PropTable[i][j]], self.ConditionTable[i][j]))
+    # def create_condition_table(self, debug: bool):
+    #
+    #     # create empty condition table
+    #     self.ConditionTable = np.zeros((len(self.labels), len(self.sensor_list)))
+    #
+    #     # Iterate through possible sensors
+    #     # all possible sensors do adhear to the rules of the existing sensor set
+    #     for j in range(len(self.sensor_list)):
+    #         # Extract rule from proptable
+    #         total = 0
+    #         for i in range(len(self.labels)):
+    #             p_E = self.ProbY[i][0]
+    #             # Extract rule from proptable
+    #             k = self.PropTable[i][j]
+    #             total += 1
+    #
+    #             # If not already there
+    #             if self.k_dic[j].get(self.PropTable[i][j]) is None:
+    #                 # Add
+    #                 # k_dic.update({s_state.PropTable[i][j]:s_state.k_dic[j][s_state.PropTable[i][j]]})
+    #                 self.ConditionTable[i][j] = p_E / self.k_dic[j][self.PropTable[i][j]]
+    #
+    #             else:
+    #                 # update
+    #                 # k_dic[s_state.PropTable[i][j]]+=k_dic[j][s_state.PropTable[i][j]]
+    #                 self.ConditionTable[i][j] = p_E / self.k_dic[j][self.PropTable[i][j]]
+    #
+    #             if debug:
+    #                 print("i = {}, j = {}, p_E/prob = {:.2f}/{:.2f} = {:.2f}".format(i, j, p_E, self.k_dic[j][
+    #                     self.PropTable[i][j]], self.ConditionTable[i][j]))

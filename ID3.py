@@ -101,7 +101,7 @@ class DecisionTreeClassifier:
             #-a * p * math.log(p, 2)
         #entropy_new = sum([-count/p_obsv * math.log(count/p_obsv, 2) if count else 0 for count in label_count_new])
         if debug:
-            print(f"    Node.name = {node.name}")
+            print(f"    Feature = {self.ss.feature_names[feature_id]}")
             print(f"    P(Obs) = {p_obsv}")
             print(f"    P(Y) = {label_count_new}")
             print(f"    entropy = {entropy_new}")
@@ -130,6 +130,26 @@ class DecisionTreeClassifier:
             print(f"    entropy = {entropy_new}")
         return entropy_new
 
+    def _get_entropy(self, x_ids,debug):
+        """ Calculates the entropy.
+        Parameters
+        __________
+        :param x_ids: list, List containing the instances ID's
+        __________
+        :return: entropy: float, Entropy.
+        """
+        # sorted labels by instance id
+        labels = [self.labels[i] for i in x_ids]
+        # count number of instances of each category
+        label_count = [labels.count(x) for x in self.labelCategories]
+        # calculate the entropy for each category and sum them
+        entropy = sum([-count / len(x_ids) * math.log(count / len(x_ids), 2) if count else 0 for count in label_count])
+
+        if debug:
+            print(f"    {label_count}")
+            print(f"    entropy = {entropy}")
+        return entropy
+
     def _get_information_gain(self, x_ids, feature_id, last_id,node,debug):
         """Calculates the information gain for a given feature based on its entropy and the total entropy of the system.
         Parameters
@@ -157,23 +177,27 @@ class DecisionTreeClassifier:
             for y in feature_vals
         ]
 
+        cost = 0
+        if last_id is None:
+            # The first options is the average distance
+            # print(f"last ID is None = {last_id}")
+            cost = self.ss.sensor_cost[feature_id]
+            if debug: print(f"From Start -> {self.ss.feature_names[feature_id]} ")
+        else:
+            cost = self.ss.connection_matrix[last_id, feature_id]
+            if debug: print(
+                f"From {self.ss.feature_names[last_id]} ({node.obsv[-1]}) -> {self.ss.feature_names[feature_id]} ")
+
         # compute the information gain with the chosen feature
         # info_gain = info_gain - sum([val_counts / len(x_ids) * self._get_entropy(val_ids, debug)
         #                              for val_counts, val_ids in zip(feature_vals_count, feature_vals_id)])
         for val, val_ids in zip(feature_vals, feature_vals_id):
-            info_gain = info_gain - self._get_conditional_entropy(val_ids, node,feature_id, debug)
+            entropy  = self._get_conditional_entropy(val_ids, node,feature_id, debug)
+            if debug: print(f"  {info_gain-entropy} = {info_gain} - {entropy}")
+            info_gain = info_gain - entropy
                                       #*val_counts / len(x_ids) *
         #print(f"last ID = {last_id}")
 
-        cost= 0
-        if last_id is None:
-            # The first options is the average distance
-            #print(f"last ID is None = {last_id}")
-            cost = self.ss.sensor_cost[feature_id]
-            if debug: print(f"From Start -> {self.ss.feature_names[feature_id]} ")
-        else:
-            cost = self.ss.connection_matrix[last_id,feature_id]
-            if debug: print(f"From {self.ss.feature_names[last_id]} ({node.obsv[-1]}) -> {self.ss.feature_names[feature_id]} ")
         if debug:
 
             print(

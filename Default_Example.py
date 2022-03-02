@@ -10,9 +10,15 @@ data = {
     'swell_forecasting': ['small', 'medium', 'large'],
     'good_waves': ['Yes', 'No']
 }
-
+path = "Data"
 # create an empty dataframe
 data_df = pd.DataFrame(columns=data.keys())
+data_df.to_csv(path+"/Proptable.csv")
+
+# Create connectionmatrix
+conn = np.ones((data_df.shape[1],data_df.shape[1]))
+conn = pd.DataFrame(data=conn)
+conn.to_csv(path+"/Proptable.csv")
 
 np.random.seed(42)
 # randomnly create 1000 instances
@@ -23,6 +29,10 @@ for i in range(1000):
     data_df.loc[i, 'good_waves'] = str(np.random.choice(data['good_waves'], 1)[0])
 
 data_df.head()
+
+lst = []
+for key in data:
+    data_df
 
 # separate target from predictors
 X = np.array(data_df.drop('good_waves', axis=1).copy())
