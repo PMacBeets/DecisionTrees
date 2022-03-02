@@ -47,66 +47,6 @@ class DecisionTreeClassifier:
         self.node = None
         #self.entropy = self._get_entropy([x for x in range(len(self.ss.labels))],debug)  # calculates the initial entropy
 
-    def _get_system_entropy(self, x_ids, debug):
-        """ Calculates the entropy of the system.
-        Parameters
-        __________
-        :param x_ids: list, List containing the instances ID's
-        __________
-        :return: entropy: float, Entropy.
-        """
-        # sorted labels by instance id
-        labels = [self.ss.labels[i] for i in x_ids]
-        # count number of instances of each category
-        label_count_new = self.ss.probY[x_ids]
-        # label_count_new = label_count_new/np.sum(label_count_new)
-        # assert(np.sum(label_count_new)-1< 0.00001)
-        #label_count = [labels.count(x) for x in self.ss.labelCategories]
-        entropy_system = sum([-count * math.log(count, 2) if count else 0 for count in label_count_new])
-        if debug:
-            print(f"    {label_count_new}")
-            print(f"    entropy = {entropy_system}")
-        return entropy_system
-
-    def _get_conditional_entropy(self, x_ids, node, feature_id, debug):
-        """ Calculates the conditional entropy.
-        Parameters
-        __________
-        :param x_ids: list, List containing the instances ID's
-        __________
-        :return: entropy: float, Entropy.
-        """
-        # sorted labels by instance id
-        labels = [self.ss.labels[i] for i in x_ids]
-        # count number of instances of each category
-        label_count_new = self.ss.probY[x_ids]
-        # label_count_new = label_count_new / np.sum(label_count_new)
-        # assert (np.sum(label_count_new) - 1 < 0.00001)
-        label_count = [labels.count(x) for x in self.ss.labelCategories]
-
-        # Get Conditional probability P(Y=Ei|Obs) = 1*P(Y=Ei)/P(OBS)
-        # Iterate through visited inspection locations
-        i=0
-        p_obsv = 1
-        for visited in node.visited:
-            p_obsv = p_obsv*self.ss.k_dic[visited][node.obsv[i]]
-            i+=1
-        # calculate the entropy for each category and sum them
-        #entropy = sum([-count / len(x_ids) * math.log(count / len(x_ids), 2) if count else 0 for count in label_count])
-        entropy_new = 0
-        for i in range(len(label_count_new)):
-            p = 1#p_obsv*self.ss.k_dic[feature_id][self.ss.X[i,feature_id]]
-            count = label_count_new[i]
-            entropy_new += -p*count * math.log(count, 2)
-            #-a * p * math.log(p, 2)
-        #entropy_new = sum([-count/p_obsv * math.log(count/p_obsv, 2) if count else 0 for count in label_count_new])
-        if debug:
-            print(f"    Feature = {self.ss.feature_names[feature_id]}")
-            print(f"    P(Obs) = {p_obsv}")
-            print(f"    P(Y) = {label_count_new}")
-            print(f"    entropy = {entropy_new}")
-        return entropy_new
-
     def _get_entropy(self, x_ids,debug):
         """ Calculates the entropy.
         Parameters
@@ -129,8 +69,19 @@ class DecisionTreeClassifier:
         #     # Iterate through events
         #     for j in range(len(self.ss.labels)):
         #         a = a*self.ss.k_dic[j][self.ss.X[i][j]]
-        label_count_new = label_count_new / np.sum(label_count_new)
-        assert (np.sum(label_count_new) - 1 < 0.00001)
+
+        entropy = 0
+        for count in label_count:
+            if count:
+                entropy -= count / len(x_ids) * math.log(count / len(x_ids), 2)
+                print(f"        entropy = {entropy}")
+
+        entropy_new = 0
+        label_count_new = label_count_new/np.sum(label_count_new)
+        for count in label_count_new:
+            if count:
+                entropy_new -= count * math.log(count, 2)
+                print(f"        entropy new = {entropy_new}")
 
         if debug:
             # print(f"    {label_count}")
@@ -138,26 +89,6 @@ class DecisionTreeClassifier:
             print(f"    {label_count_new}")
             print(f"    entropy new = {entropy_new}")
         return entropy_new
-
-    # def _get_entropy(self, x_ids,debug):
-    #     """ Calculates the entropy.
-    #     Parameters
-    #     __________
-    #     :param x_ids: list, List containing the instances ID's
-    #     __________
-    #     :return: entropy: float, Entropy.
-    #     """
-    #     # sorted labels by instance id
-    #     labels = [self.ss.labels[i] for i in x_ids]
-    #     # count number of instances of each category
-    #     label_count = [labels.count(x) for x in self.ss.labelCategories]
-    #     # calculate the entropy for each category and sum them
-    #     entropy = sum([-count / len(x_ids) * math.log(count / len(x_ids), 2) if count else 0 for count in label_count])
-    #
-    #     if debug:
-    #         print(f"    {label_count}")
-    #         print(f"    entropy = {entropy}")
-    #     return entropy
 
     def _get_information_gain(self, x_ids, feature_id, last_id,node,debug):
         """Calculates the information gain for a given feature based on its entropy and the total entropy of the system.

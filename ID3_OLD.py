@@ -41,6 +41,8 @@ class DecisionTreeClassifier:
         for count in label_count:
             if count:
                 entropy -=count / len(x_ids) * math.log(count / len(x_ids), 2)
+                print(f"        entropy = {entropy}")
+
         print(f"    {label_count}")
         print(f"    entropy = {entropy}")
         return entropy

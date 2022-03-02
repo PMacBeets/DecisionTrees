@@ -8,7 +8,7 @@ from anytree.exporter import DotExporter
 import os
 
 path = "Data"
-system = ID3_Plus.InspectionSystem(path)
+system = ID3_Plus.InspectionSystem()
 system.buildtree(True)
 h = graphviz.Digraph('H', filename='InspectionGraph.gv')
 #h = graphviz.AGraph("H", filename='InspectionGraph.gv', directed=True)
