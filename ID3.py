@@ -59,6 +59,8 @@ class DecisionTreeClassifier:
         labels = [self.ss.labels[i] for i in x_ids]
         # count number of instances of each category
         label_count_new = self.ss.probY[x_ids]
+        # label_count_new = label_count_new/np.sum(label_count_new)
+        # assert(np.sum(label_count_new)-1< 0.00001)
         #label_count = [labels.count(x) for x in self.ss.labelCategories]
         entropy_system = sum([-count * math.log(count, 2) if count else 0 for count in label_count_new])
         if debug:
@@ -66,7 +68,7 @@ class DecisionTreeClassifier:
             print(f"    entropy = {entropy_system}")
         return entropy_system
 
-    def _get_conditional_entropy(self, x_ids, node, debug):
+    def _get_conditional_entropy(self, x_ids, node, feature_id, debug):
         """ Calculates the conditional entropy.
         Parameters
         __________
@@ -78,6 +80,8 @@ class DecisionTreeClassifier:
         labels = [self.ss.labels[i] for i in x_ids]
         # count number of instances of each category
         label_count_new = self.ss.probY[x_ids]
+        # label_count_new = label_count_new / np.sum(label_count_new)
+        # assert (np.sum(label_count_new) - 1 < 0.00001)
         label_count = [labels.count(x) for x in self.ss.labelCategories]
 
         # Get Conditional probability P(Y=Ei|Obs) = 1*P(Y=Ei)/P(OBS)
@@ -89,8 +93,15 @@ class DecisionTreeClassifier:
             i+=1
         # calculate the entropy for each category and sum them
         #entropy = sum([-count / len(x_ids) * math.log(count / len(x_ids), 2) if count else 0 for count in label_count])
-        entropy_new = sum([-count/p_obsv * math.log(count/p_obsv, 2) if count else 0 for count in label_count_new])
+        entropy_new = 0
+        for i in range(len(label_count_new)):
+            p = p_obsv*self.ss.k_dic[feature_id][self.ss.X[i,feature_id]]
+            count = label_count_new[i]
+            entropy_new += -p*count * math.log(count, 2)
+            #-a * p * math.log(p, 2)
+        #entropy_new = sum([-count/p_obsv * math.log(count/p_obsv, 2) if count else 0 for count in label_count_new])
         if debug:
+            print(f"    Node.name = {node.name}")
             print(f"    P(Obs) = {p_obsv}")
             print(f"    P(Y) = {label_count_new}")
             print(f"    entropy = {entropy_new}")
@@ -149,10 +160,11 @@ class DecisionTreeClassifier:
         # compute the information gain with the chosen feature
         # info_gain = info_gain - sum([val_counts / len(x_ids) * self._get_entropy(val_ids, debug)
         #                              for val_counts, val_ids in zip(feature_vals_count, feature_vals_id)])
-
-        info_gain = info_gain - sum([val_counts / len(x_ids) * self._get_conditional_entropy(val_ids, node, debug)
-                                     for val_counts, val_ids in zip(feature_vals_count, feature_vals_id)])
+        for val, val_ids in zip(feature_vals, feature_vals_id):
+            info_gain = info_gain - self._get_conditional_entropy(val_ids, node,feature_id, debug)
+                                      #*val_counts / len(x_ids) *
         #print(f"last ID = {last_id}")
+
         cost= 0
         if last_id is None:
             # The first options is the average distance
@@ -161,7 +173,7 @@ class DecisionTreeClassifier:
             if debug: print(f"From Start -> {self.ss.feature_names[feature_id]} ")
         else:
             cost = self.ss.connection_matrix[last_id,feature_id]
-            if debug: print(f"From {self.ss.feature_names[last_id]} -> {self.ss.feature_names[feature_id]} ")
+            if debug: print(f"From {self.ss.feature_names[last_id]} ({node.obsv[-1]}) -> {self.ss.feature_names[feature_id]} ")
         if debug:
 
             print(
@@ -207,6 +219,7 @@ class DecisionTreeClassifier:
         if not node:
             node = Node(self.ss)  # initialize nodes
             node.name = None
+            print("NEEEEW")
 
             node.unvisited = unvisited.copy()
             if visited:
@@ -271,7 +284,7 @@ class DecisionTreeClassifier:
                     feature_ids_copy.pop(to_remove)
                 # recursively call the algorithm
                 child.next = self._id3_recv(child_x_ids, feature_ids_copy, child.next, depth+1, max_depth, node.visited, node.unvisited,child.obsv, node.id, debug)
-        if debug: print(f"END: {node.value} chosen from {labels_in_features}")
+        #if debug: print(f"END: {node.value} chosen from {labels_in_features}")
         return node
 
     def printTree(self):

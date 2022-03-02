@@ -128,7 +128,7 @@ class InspectionSystem:
         # Create connection matrix
         p = 0.3  # probability that there is a connection between two nodes
         self.connection_matrix = np.empty((self.num_inspections, self.num_inspections),dtype=float)
-        self.connection_matrix[:] = np.NaN
+        self.connection_matrix[:] = 1000
         random = np.random.rand(self.num_inspections, self.num_inspections)
         # fill connection connection_matrix
         for i in range(self.num_inspections):

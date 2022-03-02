@@ -90,11 +90,11 @@ def build_node_tree(node, nodes):
 
 h.node(node.uid, label=node.value)
 build_node_tree2(node, h)
-# nodes = {}
-# nodes[node.uid] = Node(node.name)
-# build_node_tree(node, nodes)
-# for pre, fill, nod in RenderTree(nodes[node.uid]):
-#     print("%s%s" % (pre, nod.name))
+nodes = {}
+nodes[node.uid] = Node(node.name)
+build_node_tree(node, nodes)
+for pre, fill, nod in RenderTree(nodes[node.uid]):
+    print("%s%s" % (pre, nod.name))
 
 # A.layout()  # layout with default (neato)
 # A.draw('simple.png',prog='dot') # draw png
