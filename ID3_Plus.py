@@ -22,6 +22,9 @@ class InspectionSystem:
         self.connection_matrix = None # What is the cost of transitioning between connection matrices
         self.event_list = None # Label associated with each event (row of dataframe)
 
+        self.fixed_cost = None # cost of completing the inspection at each node
+        self.start = None # cost to get to the first node
+
         # How many
         self.num_sensors = None
         self.num_inspections = None
@@ -35,7 +38,7 @@ class InspectionSystem:
             pass
 
         self.ave_inspection_costs = self.calc_ave_inspection_cost() # from connection matrix
-        self.root = SearchState(np.array(self.inspection_df), list(self.inspection_df.columns), self.event_list, self.ave_inspection_costs, self.event_prob, self.connection_matrix)
+        self.root = SearchState(np.array(self.inspection_df), list(self.inspection_df.columns), self.event_list, self.fixed_cost, self.event_prob, self.connection_matrix, self.start)
 
     def lookahead(self):
         # instantiate DecisionTreeClassifier
@@ -51,7 +54,7 @@ class InspectionSystem:
         #print("System entropy {:.4f}".format(self.tree_clf.entropy))
         # run algorithm id3 to build a tree
         self.tree_clf.id3(debug=debug)
-        self.tree_clf.printTree()
+        #self.tree_clf.printTree()
 
     def search(self):
         root = Node(self.root)
@@ -88,7 +91,18 @@ class InspectionSystem:
         self.connection_matrix = np.array(pd.read_csv(self.path+"/ConnectionMatrix.csv", header=None))
         assert(self.connection_matrix.shape[1] == self.connection_matrix.shape[0] == shape[1])
         self.event_prob = np.array(pd.read_csv(self.path+"/ProbY.csv", header=None).transpose())
+        self.event_prob = self.event_prob/np.sum(self.event_prob)
         self.event_prob = self.event_prob[0,:]
+
+        try:
+            self.fixed_cost = np.array(pd.read_csv(self.path + "/FixedCost.csv", header=None))
+        except:
+            self.fixed_cost = np.ones(self.num_inspections)[0,:]
+        try:
+            self.start = np.array(pd.read_csv(self.path + "/Start.csv", header=None))
+        except:
+            self.start = np.ones(self.num_inspections)[0,:]
+
         print("p")
 
     def build_random_data(self, debug=False):
@@ -201,7 +215,7 @@ class InspectionSystem:
 
 class SearchState:
 
-    def __init__(self, X, feature_names, event_list, sensor_cost, ProbY, connection_matrix,debug=False):
+    def __init__(self, X, feature_names, event_list, sensor_cost, ProbY, connection_matrix,start,debug=False):
         assert isinstance(X, np.ndarray)
         #assert isinstance(event_list, list)
 
@@ -209,7 +223,8 @@ class SearchState:
         self.feature_names = feature_names # inspection names
         self.labels = event_list
         self.probY = ProbY
-        self.sensor_cost = sensor_cost # The cost of inspecting each sensor
+        self.sensor_cost = sensor_cost[0,:] # The cost of inspecting each sensor
+        self.start = start[0,:] # cost of getting to first inspection
         self.k_dic = [None]*np.shape(self.X)[1]
         self.labelCategories = list(set(self.labels))
         self.labelCategoriesCount = [list(self.labels).count(x) for x in self.labelCategories]

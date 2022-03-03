@@ -26,9 +26,8 @@ class Node:
         self.obsv = []
         self.unvisited = ss.labels
         self.df = None
-        # entropy calcs
-        self.p_obsv = None
-        self.condition_table = None
+        self.cost = None
+
 
     def create_df(self):
         #print(f"{self.x_ids},{self.unvisited}")
@@ -59,29 +58,21 @@ class DecisionTreeClassifier:
         labels = [self.ss.labels[i] for i in x_ids]
         # count number of instances of each category
         label_count_new = self.ss.probY[x_ids]
-        label_count = [labels.count(x) for x in self.ss.labelCategories]
+        #label_count = [labels.count(x) for x in self.ss.labelCategories]
         # calculate the entropy for each category and sum them
-        entropy = sum([-count / len(x_ids) * math.log(count / len(x_ids), 2) if count else 0 for count in label_count])
-        entropy_new = sum([-count * math.log(count, 2) if count else 0 for count in label_count_new])
-        # # Iterate though inspection
-        # a = 1
-        # for i in range(len(self.ss.feature_names)):
-        #     # Iterate through events
-        #     for j in range(len(self.ss.labels)):
-        #         a = a*self.ss.k_dic[j][self.ss.X[i][j]]
 
-        entropy = 0
-        for count in label_count:
-            if count:
-                entropy -= count / len(x_ids) * math.log(count / len(x_ids), 2)
-                print(f"        entropy = {entropy}")
+        # entropy = 0
+        # for count in label_count:
+        #     if count:
+        #         entropy -= count / len(x_ids) * math.log(count / len(x_ids), 2)
+        #         print(f"        entropy = {entropy}")
 
         entropy_new = 0
-        label_count_new = label_count_new/np.sum(label_count_new)
+        #label_count_new = label_count_new/np.sum(label_count_new)
         for count in label_count_new:
             if count:
                 entropy_new -= count * math.log(count, 2)
-                print(f"        entropy new = {entropy_new}")
+                if debug: print(f"        entropy new = {entropy_new}")
 
         if debug:
             # print(f"    {label_count}")
@@ -100,9 +91,9 @@ class DecisionTreeClassifier:
         :return: info_gain: float, the information gain for a given feature.
         """
         # calculate total entropy
-        print(f"Get Total Entropy")
+        if debug: print(f"Get Total Entropy")
         info_gain = self._get_entropy(x_ids,debug)
-        print(f"System Entropy = {info_gain}")
+        if debug:  print(f"System Entropy = {info_gain}")
         # store in a list all the values of the chosen feature
         x_features = [self.ss.X[x][feature_id] for x in x_ids]
         # get unique values
@@ -121,16 +112,16 @@ class DecisionTreeClassifier:
         if last_id is None:
             # The first options is the average distance
             # print(f"last ID is None = {last_id}")
-            cost = self.ss.sensor_cost[feature_id]
+            cost = self.ss.start[feature_id]+self.ss.sensor_cost[feature_id]
             if debug: print(f"From Start -> {self.ss.feature_names[feature_id]} ")
         else:
-            cost = self.ss.connection_matrix[last_id, feature_id]
+            cost = self.ss.connection_matrix[last_id, feature_id]+self.ss.sensor_cost[feature_id]
             if debug: print(
                 f"From {self.ss.feature_names[last_id]} ({node.obsv[-1]}) -> {self.ss.feature_names[feature_id]} ")
 
         # compute the information gain with the chosen feature
         for val_counts, val_ids in zip(feature_vals_count, feature_vals_id):
-            entropy= val_counts / len(x_ids) * self._get_entropy(val_ids, debug)
+            entropy = np.sum(self.ss.probY[val_ids]) * self._get_entropy(val_ids, debug)
             if debug: print(f"  {info_gain - entropy} = {info_gain} - {entropy}")
             info_gain = info_gain - entropy
             # a = 1
@@ -149,7 +140,7 @@ class DecisionTreeClassifier:
 
             print(
                 f"Cost = {cost:.2f} Info = {info_gain:.2f}, Info/Cost = {info_gain/cost}")
-        return info_gain/cost
+        return info_gain,cost
 
     def _get_feature_max_information_gain(self, x_ids, feature_ids, last_id,node, debug):
         """Finds the attribute/feature that maximizes the information gain.
@@ -162,10 +153,18 @@ class DecisionTreeClassifier:
         """
         # get the entropy for each feature
         #print(f"last ID = {last_id}")
-        features_entropy = [self._get_information_gain(x_ids, feature_id, last_id,node, debug) for feature_id in feature_ids]
+        cost_arr = np.zeros(len(feature_ids))
+        features_entropy_arr = np.zeros(len(feature_ids))
+        i=0
+        for feature_id in feature_ids:
+            features_entropy,cost = self._get_information_gain(x_ids, feature_id, last_id,node, debug)
+            cost_arr[i] = cost
+            features_entropy_arr[i] = features_entropy
+            i+=1
         # find the feature that maximises the information gain
-        max_id = feature_ids[features_entropy.index(max(features_entropy))]
-        return self.ss.feature_names[max_id], max_id
+        index = np.argmax(features_entropy_arr/cost_arr)
+        max_id = feature_ids[index]
+        return self.ss.feature_names[max_id], max_id, cost_arr[index]
 
     def id3(self, max_depth=None, debug=None):
         """Initializes ID3 algorithm to build a Decision Tree Classifier.
@@ -190,7 +189,6 @@ class DecisionTreeClassifier:
         if not node:
             node = Node(self.ss)  # initialize nodes
             node.name = None
-            print("NEEEEW")
 
             node.unvisited = unvisited.copy()
             if visited:
@@ -217,8 +215,8 @@ class DecisionTreeClassifier:
             return node
         # else...
         # choose the feature that maximizes the information gain
-        print(f"last ID = {last_id}")
-        best_feature_name, best_feature_id = self._get_feature_max_information_gain(x_ids, feature_ids, last_id,node, debug)
+        if debug: print(f"last ID = {last_id}")
+        best_feature_name, best_feature_id, cost = self._get_feature_max_information_gain(x_ids, feature_ids, last_id,node, debug)
         node.value = best_feature_name
         node.visited.append(best_feature_id)
         node.unvisited.remove(best_feature_id)
@@ -226,6 +224,7 @@ class DecisionTreeClassifier:
         node.x_ids = x_ids
         node.id = best_feature_id
         node.childs = []
+        node.cost = cost
         # value of the chosen feature for each instance
         feature_values = list(set([self.ss.X[x][best_feature_id] for x in x_ids]))
 

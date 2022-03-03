@@ -8,7 +8,7 @@ from anytree.exporter import DotExporter
 import os
 
 path = "Data"
-system = ID3_Plus.InspectionSystem()
+system = ID3_Plus.InspectionSystem(path)
 system.buildtree(True)
 h = graphviz.Digraph('H', filename='InspectionGraph.gv')
 #h = graphviz.AGraph("H", filename='InspectionGraph.gv', directed=True)
@@ -42,9 +42,9 @@ def build_node_tree2(node, h):
     # if node.childs is [] and node.next is None:
     #     return
     node.create_df()
-    print(f"node.uid={node.uid}")
+    #print(f"node.uid={node.uid}")
     if node.childs is not None:
-        print(f"node.childs ={[n.uid for n in node.childs]}")
+        #print(f"node.childs ={[n.uid for n in node.childs]}")
         for child in node.childs:
             #print(node.name, child.name)
             h.node(child.uid, label=str(child.value))
@@ -52,7 +52,7 @@ def build_node_tree2(node, h):
             #h[child.uid] = Node(child.value, parent=h[node.uid])
             build_node_tree2(child, h)
     elif node.next is not None:
-        print(f"node.next={node.next.uid}")
+        #print(f"node.next={node.next.uid}")
         if node.next.name is None:
             h.node(node.next.uid, label=node.next.value)
             h.edge(node.uid,node.next.uid)
@@ -60,7 +60,7 @@ def build_node_tree2(node, h):
             #node.create_df()
         else:
             h.node(node.next.uid, label=node.next.value)
-            h.edge(node.uid,node.next.uid)
+            h.edge(node.uid,node.next.uid,label=str(node.next.cost))
             #h[node.next.uid] = Node(node.next.value, parent=h[node.uid])
             build_node_tree2(node.next, h)
     else:
@@ -71,15 +71,15 @@ def build_node_tree(node, nodes):
     # if node.childs is [] and node.next is None:
     #     return
     node.create_df()
-    print(f"node.uid={node.uid}")
+    #print(f"node.uid={node.uid}")
     if node.childs is not None:
-        print(f"node.childs ={[n.uid for n in node.childs]}")
+        #print(f"node.childs ={[n.uid for n in node.childs]}")
         for child in node.childs:
             #print(node.name, child.name)
             nodes[child.uid] = Node(child.value, parent=nodes[node.uid])
             build_node_tree(child, nodes)
     elif node.next is not None:
-        print(f"node.next={node.next.uid}")
+        #print(f"node.next={node.next.uid}")
         if node.next.name is None:
             nodes[node.uid] = Node(node.next.value, parent=nodes[node.uid])
             #node.create_df()
@@ -88,8 +88,9 @@ def build_node_tree(node, nodes):
             build_node_tree(node.next, nodes)
     else:
         return
-
+h.node(str(-1), label="Start")
 h.node(node.uid, label=node.value)
+h.edge(str(-1),node.uid, label=str(node.cost))
 build_node_tree2(node, h)
 nodes = {}
 nodes[node.uid] = Node(node.name)
