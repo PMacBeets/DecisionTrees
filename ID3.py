@@ -124,17 +124,6 @@ class DecisionTreeClassifier:
             entropy = np.sum(self.ss.probY[val_ids]) * self._get_entropy(val_ids, debug)
             if debug: print(f"  {info_gain - entropy} = {info_gain} - {entropy}")
             info_gain = info_gain - entropy
-            # a = 1
-            # for i in range(len(self.ss.feature_names)):
-            #     # Iterate through events
-            #     for j in range(len(self.ss.labels)):
-            #         a = a*self.ss.k_dic[j][self.ss.X[i][j]]
-        # for val, val_ids in zip(feature_vals, feature_vals_id):
-        #     entropy  = self._get_conditional_entropy(val_ids, node,feature_id, debug)
-        #     if debug: print(f"  {info_gain-entropy} = {info_gain} - {entropy}")
-        #     info_gain = info_gain - entropy
-                                      #*val_counts / len(x_ids) *
-        #print(f"last ID = {last_id}")
 
         if debug:
 

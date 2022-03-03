@@ -55,7 +55,7 @@ def build_node_tree2(node, h):
         #print(f"node.next={node.next.uid}")
         if node.next.name is None:
             h.node(node.next.uid, label=node.next.value)
-            h.edge(node.uid,node.next.uid)
+            h.edge(node.uid,node.next.uid,label=f"p={node.ss.probY[node.ss.labels.index(node.next.value)]:.2f}") #label=f"p={node.ss.probY[node.ss.labels.index(node.next.value)])
             #h[node.uid] = Node(node.next.value, parent=h[node.uid])
             #node.create_df()
         else:
