@@ -68,7 +68,7 @@ class DecisionTreeClassifier:
         #         print(f"        entropy = {entropy}")
 
         entropy_new = 0
-        #label_count_new = label_count_new/np.sum(label_count_new)
+        label_count_new = label_count_new/np.sum(label_count_new)
         for count in label_count_new:
             if count:
                 entropy_new -= count * math.log(count, 2)
